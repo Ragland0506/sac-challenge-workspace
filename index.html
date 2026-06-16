@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAC Sprint 1 Extra Challenge Grid Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f4f6f9;
+        }
+        h1, h3 { color: #333; }
+        .control-panel {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .control-group {
+            display: inline-block;
+            margin-right: 20px;
+            vertical-align: top;
+        }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input[type="number"], input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 80px;
+        }
+        button {
+            padding: 8px 12px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #0056b3; }
+        .grid-container {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        .grid-column {
+            background-color: #fff;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-top: 5px solid #007bff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 150px;
+            transition: transform 0.2s;
+        }
+        .column-header {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .edit-panel {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        .edit-panel label { font-size: 0.85em; margin-top: 5px; }
+        .edit-panel input { width: 100%; box-sizing: border-box; margin-bottom: 5px; padding: 4px; }
+        .btn-edit { background-color: #6c757d; font-size: 0.8em; padding: 4px 8px; }
+        .btn-edit:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+
+    <h1>SAC Sprint 1 Extra Challenge: Multi-Column Grid Engine</h1>
+    
+    <div class="control-panel">
+        <div class="control-group">
+            <label>Grid Columns count:</label>
+            <button onclick="adjustColumns(-1)">-</button>
+            <input type="number" id="columnCountInput" value="3" min="1" max="12" onchange="updateGridColumns(this.value)">
+            <button onclick="adjustColumns(1)">+</button>
+        </div>
+        
+        <div class="control-group">
+            <label>Reorder Scheme (CSV Indices):</label>
+            <input type="text" id="reorderSequenceInput" placeholder="0,1,2" style="width: 150px;">
+            <button onclick="applyReorderSequence()">Apply Order</button>
+        </div>
+    </div>
+
+    <div id="dashboardGrid" class="grid-container" style="grid-template-columns: repeat(3, 1fr);"></div>
+
+    <script>
+        // Default persistent data array tracking internal state configuration metadata matrices
+        let columnsData = [
+            { id: 0, title: "Database Metrics", color: "#e2f0d9" },
+            { id: 1, title: "API Gateway Nodes", color: "#fce4d6" },
+            { id: 2, title: "Frontend Cluster", color: "#fff2cc" }
+        ];
+
+        function renderGrid() {
+            const container = document.getElementById('dashboardGrid');
+            container.innerHTML = '';
+
+            columnsData.forEach((col, index) => {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'grid-column';
+                // Metric 4: Background-color directly bounded to state object variables
+                colDiv.style.backgroundColor = col.color;
+                colDiv.style.borderTopColor = '#333';
+
+                colDiv.innerHTML = `
+                    <div>
+                        <div class="column-header">
+                            <span id="title-text-${col.id}">${col.title}</span>
+                            <button class="btn-edit" onclick="toggleEditPanel(${col.id})">Edit</button>
+                        </div>
+                        <div>Slot Index Order position: <strong>${index}</strong></div>
+                    </div>
+                    
+                    <div id="edit-panel-${col.id}" class="edit-panel">
+                        <label>Update Title:</label>
+                        <input type="text" id="input-title-${col.id}" value="${col.title}" oninput="updateColumnTitle(${col.id}, this.value)">
+                        
+                        <label>CSS hex or Name Color property:</label>
+                        <input type="text" id="input-color-${col.id}" value="${col.color}" placeholder="#ffffff" oninput="updateColumnColor(${col.id}, this.value)">
+                    </div>
+                `;
+                container.appendChild(colDiv);
+            });
+            
+            // Auto update placeholder hints for index ordering fields helper layouts
+            document.getElementById('reorderSequenceInput').value = columnsData.map((_, i) => i).join(',');
+        }
+
+        // Metric 2 implementation logic handlers
+        function updateGridColumns(value) {
+            const val = Math.max(1, Math.min(12, parseInt(value) || 3));
+            document.getElementById('columnCountInput').value = val;
+            document.getElementById('dashboardGrid').style.gridTemplateColumns = `repeat(${val}, 1fr)`;
+            
+            // Expand columns data arrays matching numeric thresholds dynamically
+            while(columnsData.length < val) {
+                const nextId = columnsData.length;
+                columnsData.push({ id: nextId, title: `Dynamic Unit ${nextId + 1}`, color: "#ffffff" });
+            }
+            while(columnsData.length > val) {
+                columnsData.pop();
+            }
+            renderGrid();
+        }
+
+        function adjustColumns(delta) {
+            const input = document.getElementById('columnCountInput');
+            let currentVal = parseInt(input.value) || 3;
+            updateGridColumns(currentVal + delta);
+        }
+
+        // Metric 3 Index based manual reordering sequences parser
+        function applyReorderSequence() {
+            const inputVal = document.getElementById('reorderSequenceInput').value;
+            const orderIndices = inputVal.split(',').map(num => parseInt(num.trim()));
+            
+            if(orderIndices.length !== columnsData.length) {
+                alert("Order collection sequence array dimension must match current grid column count exactly.");
+                return;
+            }
+
+            let temporaryRebuiltMap = [];
+            for(let i = 0; i < orderIndices.length; i++) {
+                const targetIdx = orderIndices[i];
+                if(targetIdx >= 0 && targetIdx < columnsData.length) {
+                    temporaryRebuiltMap.push(columnsData[targetIdx]);
+                } else {
+                    alert("Invalid out-of-bounds pointer index value: " + targetIdx);
+                    return;
+                }
+            }
+            columnsData = temporaryRebuiltMap;
+            renderGrid();
+        }
+
+        // Metric 4 runtime modification helpers
+        function toggleEditPanel(id) {
+            const panel = document.getElementById(`edit-panel-${id}`);
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function updateColumnTitle(id, text) {
+            const target = columnsData.find(c => c.id === id);
+            if(target) {
+                target.title = text;
+                document.getElementById(`title-text-${id}`).innerText = text;
+            }
+        }
+
+        function updateColumnColor(id, hexColor) {
+            const target = columnsData.find(c => c.id === id);
+            if(target && hexColor.trim().length > 2) {
+                target.color = hexColor;
+                // Direct interaction loop reflecting raw changes to UI instantly
+                document.getElementById(`edit-panel-${id}`).parentElement.parentElement.style.backgroundColor = hexColor;
+            }
+        }
+
+        // Run baseline setup routines on document initialization completion matches
+        updateGridColumns(3);
+    </script>
+</body>
+</html>
